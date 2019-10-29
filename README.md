@@ -1,0 +1,1 @@
+gcc thread-server.c -o thread-server.o -lpthread
