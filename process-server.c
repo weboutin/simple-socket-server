@@ -5,6 +5,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
+#include <sys/wait.h>
 
 #define PORT 9990
 #define SIZE 1024
@@ -35,7 +37,7 @@ int wait_client(int server_socket)
     return client_socket;
 }
 
-void handler(int server_socket, int client_socket)
+void socket_handler(int server_socket, int client_socket)
 {
     char buf[SIZE];
     while (1)
@@ -52,18 +54,42 @@ void handler(int server_socket, int client_socket)
     }
 }
 
+void handler(int sig)
+{
+
+    while (waitpid(-1, NULL, WNOHANG) > 0)
+    {
+        printf("成功处理一个子进程的退出\n");
+    }
+}
+
 int main()
 {
     int server_socket = creat_socket();
 
-    // while (1)
-    // {
-    int client_socket = wait_client(server_socket);
-    // int pid = fork();
-    // printf("pid = %ld\n", (long) pid);
+    signal(SIGCHLD, handler); //处理子进程，防止僵尸进程的产生
 
-    handler(server_socket, client_socket);
-    // }
+    while (1)
+    {
+        int client_socket = wait_client(server_socket);
+        int pid = fork();
+        printf("pid = %ld\n", (long)pid);
+        if (pid == -1)
+        {
+            break;
+        }
+        if (pid > 0)
+        {
+            close(client_socket);
+            continue;
+        }
+        if (pid == 0)
+        {
+            close(server_socket);
+            socket_handler(server_socket, client_socket);
+            break;
+        }
+    }
 
     return 0;
 }
