@@ -10,7 +10,7 @@
 
 #define PORT 9990
 #define SIZE 1024
-#define MAX_CLIENTS 5
+#define MAX_CLIENTS 10
 
 int creat_socket()
 {
@@ -38,52 +38,52 @@ int creat_socket()
 
 int wait_client(int server_socket)
 {
-    fd_set rdset;
-    FD_SET(server_socket, &rdset);
+    fd_set readfds;
     int client_sockets[MAX_CLIENTS];
     for (int i = 0; i < MAX_CLIENTS; i++)
     {
         client_sockets[i] = 0;
     }
-    int flag = 0;
 
+    int max_fd = server_socket;
     while (1)
     {
-        int selectResult = select(server_socket + 1, &rdset, NULL, NULL, NULL);
+        printf("Loop ~~~\n");
+        FD_ZERO(&readfds);
+        FD_SET(server_socket, &readfds);
+        for (int i = 0; i < MAX_CLIENTS; i++)
+        {
+            if (client_sockets[i] > 0)
+            {
+                FD_SET(client_sockets[i], &readfds);
+                max_fd = max_fd + client_sockets[i];
+            }
+        }
+        int selectResult = select(max_fd + 1, &readfds, NULL, NULL, NULL);
         struct sockaddr_in cliaddr;
         int addrlen = sizeof(cliaddr);
-        if (FD_ISSET(server_socket, &rdset))
+        if (FD_ISSET(server_socket, &readfds))
         {
-            client_sockets[flag] = accept(server_socket, (struct sockaddr *)&cliaddr, &addrlen);
-            flag++;
-            printf("accept success %s\n", inet_ntoa(cliaddr.sin_addr));
-            FD_SET(client_sockets[flag], &rdset);
+            for (int i = 0; i < MAX_CLIENTS; i++)
+            {
+                if (client_sockets[i] == 0)
+                {
+                    client_sockets[i] = accept(server_socket, (struct sockaddr *)&cliaddr, &addrlen);
+                    printf("socketId==>%d client_sockets [%d] accept success, IP => %s\n", client_sockets[i], i, inet_ntoa(cliaddr.sin_addr));
+                    break;
+                }
+            }
         }
-        // for (int i = 0; i < MAX_CLIENTS; i++)
-        // {
-            // printf("check sockets\n");
-            // printf("select Result ===>%d\n", selectResult);
-            // if (FD_ISSET(client_sockets[i], &rdset))
-            // {
-            //     printf("flag=>> %d\n", flag);
-            //     printf("helloworld\n");
-            //     char buf[SIZE];
-            //     int bufSize = read(client_sockets[i], buf, SIZE - 1);
-            //     buf[bufSize] = '\0';
-            //     printf("From client: %s\n", buf);
-            // }
-        // }
-
-        // char buf[SIZE];
-        // int bufSize = read(client_socket, buf, SIZE - 1);
-        // buf[bufSize] = '\0';
-        // printf("From client: %s\n", buf);
-        // write(client_socket, buf, bufSize);
-
-        // if (strncmp(buf, "end", 3) == 0)
-        // {
-        //     break;
-        // }
+        for (int i = 0; i < MAX_CLIENTS; i++)
+        {
+            if (FD_ISSET(client_sockets[i], &readfds))
+            {
+                char buf[SIZE];
+                int bufSize = read(client_sockets[i], buf, SIZE - 1);
+                buf[bufSize] = '\0';
+                printf("From client: %s\n", buf);
+            }
+        }
     }
 }
 
@@ -92,6 +92,8 @@ int main()
     int server_socket = creat_socket();
 
     int client_socket = wait_client(server_socket);
+
+    printf("end\n");
 
     close(client_socket);
     close(server_socket);
