@@ -19,8 +19,20 @@ int creat_socket()
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     int bindResult = bind(server_socket, (struct sockaddr *)&addr, sizeof(addr));
+    printf("bindResult ==> %d\n", bindResult);
+    if (bindResult == -1)
+    {
+
+        perror("bindResult");
+    }
 
     int listenResult = listen(server_socket, 5);
+    printf("listenResult ==> %d\n", listenResult);
+    if (bindResult == -1)
+    {
+
+        perror("listenResult");
+    }
     return server_socket;
 }
 
