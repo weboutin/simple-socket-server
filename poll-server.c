@@ -45,7 +45,7 @@ int wait_client(int server_socket)
 
     while (1)
     {
-        printf("useClient => %d\n", useClient);
+        // printf("useClient => %d\n", useClient);
         int pollResult = poll(pollfds, useClient + 1, 5000);
         if (pollResult > 0)
         {
@@ -73,8 +73,22 @@ int wait_client(int server_socket)
                 {
                     char buf[SIZE];
                     int bufSize = read(pollfds[i].fd, buf, SIZE - 1);
-                    buf[bufSize] = '\0';
-                    printf("From client: %s\n", buf);
+                    if (bufSize == -1)
+                    {
+                    }
+                    else if (bufSize == 0)
+                    {
+                        pollfds[i].fd = 0;
+                        pollfds[i].events = 0;
+                        pollfds[i].revents = 0;
+                        useClient--;
+                    }
+                    else
+                    {
+
+                        buf[bufSize] = '\0';
+                        printf("From client: %s\n", buf);
+                    }
                 }
             }
         }
