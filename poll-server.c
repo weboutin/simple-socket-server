@@ -38,20 +38,15 @@ int creat_socket()
 
 int wait_client(int server_socket)
 {
-    struct pollfd pollfds[10];
+    struct pollfd pollfds[MAX_CLIENTS + 1];
     pollfds[0].fd = server_socket;
     pollfds[0].events = POLLIN | POLLPRI;
-
-    int client_sockets[MAX_CLIENTS];
-    for (int i = 0; i < MAX_CLIENTS; i++)
-    {
-        client_sockets[i] = 0;
-    }
+    int useClient = 0;
 
     while (1)
     {
-        // printf("Loop ~ \n");
-        int pollResult = poll(pollfds, 2, 5000);
+        printf("useClient => %d\n", useClient);
+        int pollResult = poll(pollfds, useClient + 1, 5000);
         if (pollResult > 0)
         {
             if (pollfds[0].revents & POLLIN)
@@ -59,15 +54,28 @@ int wait_client(int server_socket)
                 struct sockaddr_in cliaddr;
                 int addrlen = sizeof(cliaddr);
                 int client_socket = accept(server_socket, (struct sockaddr *)&cliaddr, &addrlen);
-                pollfds[1].fd = client_socket;
-                pollfds[1].events = POLLIN | POLLPRI;
+                printf("accept success %s\n", inet_ntoa(cliaddr.sin_addr));
+                for (int i = 1; i < MAX_CLIENTS; i++)
+                {
+                    if (pollfds[i].fd == 0)
+                    {
+
+                        pollfds[i].fd = client_socket;
+                        pollfds[i].events = POLLIN | POLLPRI;
+                        useClient++;
+                        break;
+                    }
+                }
             }
-            if (pollfds[1].revents & POLLIN)
+            for (int i = 1; i < MAX_CLIENTS; i++)
             {
-                char buf[SIZE];
-                int bufSize = read(pollfds[1].fd, buf, SIZE - 1);
-                buf[bufSize] = '\0';
-                printf("From client: %s\n", buf);
+                if (pollfds[i].fd > 0 && pollfds[i].revents & POLLIN)
+                {
+                    char buf[SIZE];
+                    int bufSize = read(pollfds[i].fd, buf, SIZE - 1);
+                    buf[bufSize] = '\0';
+                    printf("From client: %s\n", buf);
+                }
             }
         }
     }
