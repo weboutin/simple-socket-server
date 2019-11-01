@@ -38,7 +38,7 @@ int creat_socket()
 
 int wait_client(int server_socket)
 {
-    fd_set readfds;
+    fd_set *readfds;
     int client_sockets[MAX_CLIENTS];
     for (int i = 0; i < MAX_CLIENTS; i++)
     {
@@ -49,20 +49,20 @@ int wait_client(int server_socket)
     while (1)
     {
         printf("Loop ~~~\n");
-        FD_ZERO(&readfds);
-        FD_SET(server_socket, &readfds);
+        FD_ZERO(readfds);
+        FD_SET(server_socket, readfds);
         for (int i = 0; i < MAX_CLIENTS; i++)
         {
             if (client_sockets[i] > 0)
             {
-                FD_SET(client_sockets[i], &readfds);
+                FD_SET(client_sockets[i], readfds);
                 max_fd = max_fd + client_sockets[i];
             }
         }
-        int selectResult = select(max_fd + 1, &readfds, NULL, NULL, NULL);
+        int selectResult = select(max_fd + 1, readfds, NULL, NULL, NULL);
         struct sockaddr_in cliaddr;
         int addrlen = sizeof(cliaddr);
-        if (FD_ISSET(server_socket, &readfds))
+        if (FD_ISSET(server_socket, readfds))
         {
             for (int i = 0; i < MAX_CLIENTS; i++)
             {
@@ -76,10 +76,20 @@ int wait_client(int server_socket)
         }
         for (int i = 0; i < MAX_CLIENTS; i++)
         {
-            if (FD_ISSET(client_sockets[i], &readfds))
+            if (FD_ISSET(client_sockets[i], readfds))
             {
                 char buf[SIZE];
                 int bufSize = read(client_sockets[i], buf, SIZE - 1);
+                if (bufSize == -1)
+                {
+                    client_sockets[i] = 0;
+                    close(client_sockets[i]);
+                }
+                if (bufSize == 0)
+                {
+                    client_sockets[i] = 0;
+                    close(client_sockets[i]);
+                }
                 buf[bufSize] = '\0';
                 printf("From client: %s\n", buf);
             }

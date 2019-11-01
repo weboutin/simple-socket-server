@@ -57,6 +57,15 @@ int main()
     while (1)
     {
         int bufSize = read(client_socket, buf, SIZE - 1);
+        if (bufSize == -1)
+        {
+            break;
+        }
+        if (bufSize == 0)
+        {
+            break;
+        }
+        printf("bufSize: ==> %d\n", bufSize);
         buf[bufSize] = '\0';
         printf("From client: %s\n", buf);
         write(client_socket, buf, bufSize);

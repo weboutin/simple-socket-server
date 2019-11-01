@@ -28,10 +28,6 @@ int main()
         printf("Send to server：");
         scanf("%s", buf);
         write(client_socket, buf, strlen(buf));
-
-        int ret = read(client_socket, buf, strlen(buf));
-
-        printf("From server = %s", buf);
         printf("\n");
         if (strncmp(buf, "end", 3) == 0)
         {
