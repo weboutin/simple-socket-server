@@ -75,6 +75,10 @@ int wait_client(int server_socket)
                     int bufSize = read(pollfds[i].fd, buf, SIZE - 1);
                     if (bufSize == -1)
                     {
+                        pollfds[i].fd = 0;
+                        pollfds[i].events = 0;
+                        pollfds[i].revents = 0;
+                        useClient--;
                     }
                     else if (bufSize == 0)
                     {

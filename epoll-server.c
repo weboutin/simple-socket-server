@@ -102,8 +102,21 @@ int main()
                 {
                     char buf[SIZE];
                     int bufSize = read(client_sockets[i], buf, SIZE - 1);
-                    buf[bufSize] = '\0';
-                    printf("From client: %s\n", buf);
+                    printf("bufsize %d\n", bufSize);
+                    if (bufSize == -1)
+                    {
+                        epoll_ctl(epollfd, EPOLL_CTL_DEL, client_sockets[i], NULL);
+                    }
+                    else if (bufSize == 0)
+                    {
+                        epoll_ctl(epollfd, EPOLL_CTL_DEL, client_sockets[i], NULL);
+                    }
+                    else
+                    {
+
+                        buf[bufSize] = '\0';
+                        printf("From client: %s\n", buf);
+                    }
                 }
             }
         }
